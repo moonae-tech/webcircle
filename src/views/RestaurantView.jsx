@@ -8,14 +8,15 @@ import SearchField from '../components/SearchField/SearchField.jsx'
 
 const RestaurantView = () => {
   const [dishes, setDishes] = useState([])
-
+  const [filteredDishes, setFilteredDishes] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
   // useDebouncedCallback takes a function as a parameter and as the second parameter
   // the number of milliseconds it should wait until it is actually called so a user
   // can type freely and as long as they are typing a letter quicker than 500ms, the function won't fire yet.
   // This is to optimize user experience and communication with the server
   const debouncedEffectHook = useDebouncedCallback(() => {
     let currentEffect = true
-    fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=`)
+    fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${searchQuery}`)
       .then(res => {
         if (!res.ok) {
           return { meals: null }
@@ -28,13 +29,16 @@ const RestaurantView = () => {
         }
         // The ?? operator turns 'undefined' or 'null' values into a preferred default value on the right side
         // We know that result.meals can be null if there are no results, so in that case, we provide an empty array for safety
-        setDishes(result.meals ?? [])
+        const fetchedDishes = result.meals ?? []
+        setDishes(fetchedDishes)
+        setFilteredDishes(fetchedDishes)
       })
       .catch(() => {
         if (!currentEffect) {
           return
         }
         setDishes([])
+        setFilteredDishes([])
       })
 
     // This cleanup function is to prevent multiple API calls coming back out of sequence and setting the value of our dishes list.
@@ -50,20 +54,30 @@ const RestaurantView = () => {
 
   // useEffect can take a variable that is a function and does not need to be defined as an anonymous () => {} arrow function
   // This is especially important when using more controlled techniques like debouncing
-  useEffect(debouncedEffectHook, [debouncedEffectHook])
-
+  useEffect(debouncedEffectHook, [searchQuery, debouncedEffectHook])
+  useEffect(() => {
+    const query = searchQuery.toLowerCase()
+    setFilteredDishes(
+      dishes.filter(dish => dish.strMeal.toLowerCase().includes(query))
+    )
+  }, [searchQuery, dishes])
   return (
     <>
       <NavBar>
         <h1>ReDI React Restaurant</h1>
 
-        <SearchField searchString={dishes} />
+        <SearchField
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
       </NavBar>
 
       <div className={styles.restaurantWrapper}>
         <div className={styles.menu}>
-          {dishes.length > 0 ? (
-            dishes.map(dish => <MenuItem dish={dish} key={dish.idMeal} />)
+          {filteredDishes.length > 0 ? (
+            filteredDishes.map(dish => (
+              <MenuItem dish={dish} key={dish.idMeal} />
+            ))
           ) : (
             <p>No dishes found :(</p>
           )}
