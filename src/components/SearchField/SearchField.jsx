@@ -1,15 +1,11 @@
-import styles from "./SearchField.module.css";
+import styles from './SearchField.module.css'
 
-const SearchField = () => {
-  
+const SearchField = dishes => {
   return (
     <div className={styles.wrapper}>
-      <input
-        placeholder="Filter dishes..."
-        type="text"     
-      />
+      <input placeholder='Filter dishes...' type='text' />
     </div>
-  );
-};
+  )
+}
 
-export default SearchField;
+export default SearchField
